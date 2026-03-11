@@ -1,0 +1,58 @@
+# api-test.http
+# ใช้ Extension "REST Client" ใน VS Code
+# กด "Send Request" เหนือแต่ละ request
+
+@baseUrl = http://localhost:3000/api
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJudXJzZTAxIiwicm9sZSI6InN0YWZmIiwiaWF0IjoxNzczMDcwMTcyLCJleHAiOjE3NzMwOTg5NzJ9.tiUsF72uKefgYNnnbOLp-TuABI_SpQt06ORnmdeCixU
+
+### 1. Login (staff)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "nurse01",
+  "password": "1234"
+}
+
+### 2. Login (admin)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin01",
+  "password": "admin123"
+}
+
+### 3. Get all equipment
+GET {{baseUrl}}/equipment
+Authorization: Bearer {{token}}
+
+### 4. Submit borrow request
+POST {{baseUrl}}/requests
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "equipment_id": 1,
+  "qty": 1,
+  "ward": "ICU",
+  "borrow_date": "2026-03-10",
+  "return_date": "2026-03-15",
+  "note": "For post-op monitoring"
+}
+
+### 5. Get my requests
+GET {{baseUrl}}/requests
+Authorization: Bearer {{token}}
+
+### 6. Approve request (admin token required)
+PATCH {{baseUrl}}/requests/1/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "approved"
+}
+
+### 7. Health check
+GET {{baseUrl}}/health
