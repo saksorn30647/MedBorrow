@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedBorrow — Medical Equipment Borrowing System</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --primary: #0a6eb4;
+    --primary-dark: #084f82;
+    --primary-light: #e8f2fb;
+    --accent: #00b09b;
+    --danger: #e53935;
+    --warn: #f59e0b;
+    --text: #1a2332;
+    --muted: #6b7a90;
+    --border: #dce3ed;
+    --shadow: 0 2px 12px rgba(10,110,180,0.08);
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ===== PAGE SYSTEM ===== */
+  .page { display: none; }
+  .page.active { display: block; animation: fadeIn 0.3s ease; }
+  #page-login.active { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ===== LOGIN PAGE ===== */
+  #page-login {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0a6eb4 0%, #084f82 50%, #062d4a 100%);
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  #page-login::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.03);
+    top: -200px; right: -100px;
+  }
+  #page-login::after {
+    content: '';
+    position: absolute;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: rgba(0,176,155,0.08);
+    bottom: -100px; left: -100px;
+  }
+
+  .login-card {
+    background: rgba(255,255,255,0.97);
+    border-radius: 20px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.3);
+    position: relative;
+    z-index: 1;
+  }
+
+  .login-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .login-logo .icon {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, #0a6eb4, #00b09b);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+  }
+  .login-logo h1 { font-size: 22px; font-weight: 600; color: var(--primary); }
+  .login-logo span { font-size: 13px; color: var(--muted); display: block; font-weight: 400; }
+
+  .login-subtitle { color: var(--muted); font-size: 14px; margin-bottom: 32px; padding-top: 4px; }
+
+  .form-group { margin-bottom: 18px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+  .form-group input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--text);
+    background: var(--bg);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  .form-group input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(10,110,180,0.12);
+    background: white;
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #0a6eb4, #084f82);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    margin-top: 8px;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(10,110,180,0.35); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .login-hint { margin-top: 16px; text-align: center; font-size: 12px; color: var(--muted); }
+  .login-hint code { background: var(--bg); padding: 2px 6px; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; }
+
+  /* ===== TOPBAR ===== */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+  }
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
+  .topbar-logo { width: 32px; height: 32px; background: linear-gradient(135deg,#0a6eb4,#00b09b); border-radius: 8px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .topbar h2 { font-size: 16px; font-weight: 600; color: var(--primary); }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .user-badge { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .user-avatar { width: 32px; height: 32px; background: var(--primary-light); border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size:14px; }
+  .btn-logout { padding: 6px 14px; background: transparent; border: 1.5px solid var(--border); border-radius: 8px; font-family:inherit; font-size:13px; color:var(--muted); cursor:pointer; transition:all 0.2s; }
+  .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ===== MAIN PAGE ===== */
+  .content-wrap { max-width: 1000px; margin: 0 auto; padding: 32px 24px; }
+
+  .page-header { margin-bottom: 32px; }
+  .page-header h2 { font-size: 24px; font-weight: 600; }
+  .page-header p { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+  .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+
+  .menu-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 28px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .menu-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--card-color, var(--primary));
+    transform: scaleX(0);
+    transition: transform 0.2s;
+  }
+  .menu-card:hover { border-color: var(--card-color, var(--primary)); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(10,110,180,0.15); }
+  .menu-card:hover::after { transform: scaleX(1); }
+
+  .menu-card-icon { width: 52px; height: 52px; border-radius: 12px; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+  .menu-card-info h3 { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+  .menu-card-info p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  .card-arrow { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 18px; transition: right 0.2s; }
+  .menu-card:hover .card-arrow { right: 14px; color: var(--primary); }
+
+  /* ===== EQUIPMENT LIST ===== */
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit; font-size: 14px; color: var(--muted);
+    cursor: pointer; margin-bottom: 24px;
+    transition: all 0.2s;
+  }
+  .back-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+  .equipment-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+
+  .equip-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1.5px solid transparent;
+  }
+  .equip-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(10,110,180,0.14); border-color: var(--border); }
+
+  .equip-img {
+    width: 100%; height: 160px;
+    object-fit: cover;
+    background: var(--primary-light);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 64px;
+  }
+  .equip-body { padding: 16px; }
+  .equip-name { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .equip-desc { font-size: 12px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
+
+  .equip-footer { display: flex; align-items: center; justify-content: space-between; }
+  .stock-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .stock-badge.available { background: #e6f9f5; color: #00b09b; }
+  .stock-badge.low { background: #fff8e6; color: #f59e0b; }
+  .stock-badge.empty { background: #fdecea; color: var(--danger); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .dot.available { background: #00b09b; }
+  .dot.low { background: #f59e0b; }
+  .dot.empty { background: var(--danger); }
+
+  .btn-borrow {
+    padding: 6px 14px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 7px;
+    font-family: inherit;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-borrow:hover { background: var(--primary-dark); }
+  .btn-borrow:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+
+  /* ===== REQUEST FORM ===== */
+  .request-card { background: var(--surface); border-radius: var(--radius); padding: 32px; box-shadow: var(--shadow); max-width: 560px; }
+  .request-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 24px; }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .form-group select:focus, .form-group textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(10,110,180,0.12);
+    background: white;
+  }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+
+  .btn-submit {
+    padding: 13px 28px;
+    background: linear-gradient(135deg, #0a6eb4, #084f82);
+    color: white; border: none;
+    border-radius: 10px; font-family: inherit;
+    font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-submit:hover { box-shadow: 0 6px 16px rgba(10,110,180,0.35); transform: translateY(-1px); }
+
+  .success-toast {
+    display: none;
+    background: #e6f9f5; border: 1.5px solid #00b09b;
+    color: #007a6b; border-radius: 10px;
+    padding: 14px 18px; margin-bottom: 20px;
+    font-size: 14px; font-weight: 500;
+  }
+  .success-toast.show { display: block; animation: fadeIn 0.3s; }
+
+  /* ===== STATUS PAGE ===== */
+  .status-table-wrap { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+  .status-table { width: 100%; border-collapse: collapse; }
+  .status-table th { background: #f7fafd; padding: 14px 18px; text-align: left; font-size: 13px; font-weight: 600; color: var(--muted); border-bottom: 1.5px solid var(--border); }
+  .status-table td { padding: 14px 18px; font-size: 14px; border-bottom: 1px solid var(--border); }
+  .status-table tr:last-child td { border-bottom: none; }
+  .status-table tr:hover td { background: #f9fbfe; }
+
+  .status-pill {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+  }
+  .status-pill.pending { background: #fff8e6; color: #d97706; }
+  .status-pill.approved { background: #e6f9f5; color: #007a6b; }
+  .status-pill.returned { background: #e8f2fb; color: #0a6eb4; }
+  .status-pill.overdue { background: #fdecea; color: var(--danger); }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; animation: fadeIn 0.2s; }
+  .modal {
+    background: white; border-radius: 16px;
+    padding: 32px; max-width: 440px; width: 90%;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+  }
+  .modal h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .modal p { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+  .modal-equip { display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--bg); border-radius: 10px; margin-bottom: 24px; }
+  .modal-equip-icon { font-size: 32px; }
+  .modal-equip-name { font-weight: 600; font-size: 15px; }
+  .modal-equip-stock { font-size: 12px; color: var(--muted); }
+  .modal-actions { display: flex; gap: 12px; justify-content: flex-end; }
+  .btn-cancel { padding: 10px 20px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 14px; cursor: pointer; color: var(--muted); transition: all 0.2s; }
+  .btn-cancel:hover { border-color: var(--text); color: var(--text); }
+  .btn-confirm { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-confirm:hover { background: var(--primary-dark); }
+
+  @media (max-width: 600px) {
+    .menu-grid { grid-template-columns: 1fr; }
+    .equipment-grid { grid-template-columns: 1fr 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .content-wrap { padding: 20px 16px; }
+    .login-card { padding: 32px 24px; }
+    .status-table-wrap { overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- PAGE: LOGIN -->
+<!-- ============================================================ -->
+<div id="page-login" class="page active">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="icon">🏥</div>
+      <div>
+        <h1>MedBorrow</h1>
+        <span>Medical Equipment Borrowing System</span>
+      </div>
+    </div>
+    <p class="login-subtitle">Please sign in with your hospital account</p>
+
+    <div class="form-group">
+      <label>Username / Staff ID</label>
+      <input type="text" id="login-user" placeholder="e.g. nurse01" value="nurse01">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="••••••••" value="1234">
+    </div>
+    <button class="btn-primary" onclick="doLogin()">Sign In</button>
+    <p class="login-hint">Demo: username <code>nurse01</code> password <code>1234</code></p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TOPBAR (ใช้ร่วมกันทุกหน้าหลัง login) -->
+<!-- ============================================================ -->
+<div id="topbar" style="display:none;">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">🏥</div>
+      <h2>MedBorrow</h2>
+    </div>
+    <div class="topbar-right">
+      <div class="user-badge">
+        <div class="user-avatar">👤</div>
+        <span id="username-display">nurse01</span>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PAGE: MAIN MENU -->
+<!-- ============================================================ -->
+<div id="page-main" class="page">
+  <div class="content-wrap">
+    <div class="page-header">
+      <h2>Welcome, <span id="greet-name">nurse01</span> 👋</h2>
+      <p>Select a menu to get started</p>
+    </div>
+
+    <div class="menu-grid">
+      <!-- Card 1: Equipment List -->
+      <div class="menu-card" style="--card-color:#0a6eb4" onclick="showPage('equipment')">
+        <div class="menu-card-icon" style="background:#e8f2fb;">🔬</div>
+        <div class="menu-card-info">
+          <h3>Equipment List</h3>
+          <p>Browse available medical equipment and remaining stock</p>
+        </div>
+        <span class="card-arrow">›</span>
+      </div>
+
+      <!-- Card 2: Borrow Request -->
+      <div class="menu-card" style="--card-color:#00b09b" onclick="showPage('request')">
+        <div class="menu-card-icon" style="background:#e6f9f5;">📋</div>
+        <div class="menu-card-info">
+          <h3>Borrow Request</h3>
+          <p>Submit a request form to borrow medical equipment</p>
+        </div>
+        <span class="card-arrow">›</span>
+      </div>
+
+      <!-- Card 3: Request Status -->
+      <div class="menu-card" style="--card-color:#7c3aed" onclick="showPage('status')">
+        <div class="menu-card-icon" style="background:#f3effe;">📊</div>
+        <div class="menu-card-info">
+          <h3>Request Status</h3>
+          <p>Track the status of your borrow and return requests</p>
+        </div>
+        <span class="card-arrow">›</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PAGE: EQUIPMENT LIST -->
+<!-- ============================================================ -->
+<div id="page-equipment" class="page">
+  <div class="content-wrap">
+    <button class="back-btn" onclick="showPage('main')">← Back to Home</button>
+    <div class="page-header">
+      <h2>🔬 Medical Equipment List</h2>
+      <p>Available equipment with remaining stock</p>
+    </div>
+
+    <div class="equipment-grid" id="equipment-grid">
+      <!-- Generated by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PAGE: REQUEST FORM -->
+<!-- ============================================================ -->
+<div id="page-request" class="page">
+  <div class="content-wrap">
+    <button class="back-btn" onclick="showPage('main')">← Back to Home</button>
+    <div class="page-header">
+      <h2>📋 Submit Borrow Request</h2>
+      <p>Fill in all required fields to submit your request</p>
+    </div>
+
+    <div class="request-card">
+      <div class="success-toast" id="req-success">
+        ✅ Request submitted successfully! Please wait for staff approval.
+      </div>
+
+      <div class="form-group">
+        <label>Equipment *</label>
+        <select id="req-equipment">
+          <option value="">-- Select Equipment --</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Quantity *</label>
+          <input type="number" id="req-qty" min="1" max="5" value="1" placeholder="1">
+        </div>
+        <div class="form-group">
+          <label>Borrow Date *</label>
+          <input type="date" id="req-date">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Ward / Department *</label>
+          <input type="text" id="req-ward" placeholder="e.g. ICU, OPD, ER">
+        </div>
+        <div class="form-group">
+          <label>Expected Return Date *</label>
+          <input type="date" id="req-return">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea id="req-note" placeholder="Additional details (optional)"></textarea>
+      </div>
+      <button class="btn-submit" onclick="submitRequest()">📤 Submit Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PAGE: STATUS -->
+<!-- ============================================================ -->
+<div id="page-status" class="page">
+  <div class="content-wrap">
+    <button class="back-btn" onclick="showPage('main')">← Back to Home</button>
+    <div class="page-header">
+      <h2>📊 My Request Status</h2>
+      <p>All borrow and return requests</p>
+    </div>
+
+    <div class="status-table-wrap">
+      <table class="status-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Equipment</th>
+            <th>Qty</th>
+            <th>Ward</th>
+            <th>Borrow Date</th>
+            <th>Return Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="status-tbody">
+          <!-- Generated by JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="empty-state" id="status-empty" style="display:none;">
+      <div class="icon">📭</div>
+      <p>No requests found</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODAL: Confirm borrow from equipment page -->
+<!-- ============================================================ -->
+<div class="modal-overlay" id="borrow-modal">
+  <div class="modal">
+    <h3>Confirm Borrow Request</h3>
+    <p>You will be taken to the request form</p>
+    <div class="modal-equip">
+      <div class="modal-equip-icon" id="modal-icon">🔬</div>
+      <div>
+        <div class="modal-equip-name" id="modal-name">-</div>
+        <div class="modal-equip-stock" id="modal-stock">-</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-confirm" onclick="goToRequest()">Go to Form →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- JAVASCRIPT: Logic -->
+<!-- ============================================================ -->
+<script>
+
+// ===== CONFIG =====
+const API = 'http://localhost:3000/api';
+
+// icon map สำหรับแต่ละเครื่องมือ
+const iconMap = {
+  'Blood Pressure Monitor': '🩺',
+  'Patient Monitor':        '🖥️',
+  'ECG Machine':            '❤️',
+  'Infusion Pump':          '💉',
+  'Portable Ventilator':    '🫁',
+  'Glucometer':             '🔬',
+  'Ultrasound Machine':     '📡',
+  'Stethoscope':            '🩺',
+};
+function getIcon(name) {
+  return iconMap[name] || '🏥';
+}
+
+// ===== STATE =====
+let currentUser  = null;
+let token        = null;
+let equipmentData = [];
+let selectedEquip = null;
+
+// ===== HELPERS =====
+function getToken() { return localStorage.getItem('mb_token'); }
+function saveToken(t) { localStorage.setItem('mb_token', t); }
+function clearToken() { localStorage.removeItem('mb_token'); }
+
+function showLoading(id) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">⏳ Loading...</div>';
+}
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--danger)">❌ ${msg}</div>`;
+}
+
+// ===== PAGE NAVIGATION =====
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('topbar').style.display = name === 'login' ? 'none' : 'block';
+  if (name === 'equipment') loadEquipment();
+  if (name === 'status')    loadStatus();
+  if (name === 'request')   loadEquipSelect();
+}
+
+// ===== LOGIN =====
+async function doLogin() {
+  const username = document.getElementById('login-user').value.trim();
+  const password = document.getElementById('login-pass').value.trim();
+  if (!username || !password) return alert('Please enter your username and password.');
+
+  const btn = document.querySelector('.btn-primary');
+  btn.textContent = 'Signing in...';
+  btn.disabled = true;
+
+  try {
+    const res  = await fetch(`${API}/auth/login`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      saveToken(data.token);
+      currentUser = data.user;
+      document.getElementById('username-display').textContent = currentUser.full_name || currentUser.username;
+      document.getElementById('greet-name').textContent       = currentUser.full_name || currentUser.username;
+      showPage('main');
+    } else {
+      alert(data.message || 'Login failed.');
+    }
+  } catch (err) {
+    alert('Cannot connect to server. Make sure backend is running at localhost:3000');
+  } finally {
+    btn.textContent = 'Sign In';
+    btn.disabled = false;
+  }
+}
+
+// ===== LOGOUT =====
+function doLogout() {
+  clearToken();
+  currentUser = null;
+  token = null;
+  showPage('login');
+}
+
+// ===== LOAD EQUIPMENT FROM API =====
+async function loadEquipment() {
+  showLoading('equipment-grid');
+  try {
+    const res  = await fetch(`${API}/equipment`, {
+      headers: { 'Authorization': 'Bearer ' + getToken() }
+    });
+
+    if (res.status === 401 || res.status === 403) { doLogout(); return; }
+
+    equipmentData = await res.json();
+    renderEquipment(equipmentData);
+
+  } catch (err) {
+    showError('equipment-grid', 'Failed to load equipment. Is the server running?');
+  }
+}
+
+function renderEquipment(data) {
+  const grid = document.getElementById('equipment-grid');
+  if (!data.length) {
+    grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">No equipment found.</div>';
+    return;
+  }
+  grid.innerHTML = data.map(e => {
+    const s   = e.available_qty;
+    const cls = s === 0 ? 'empty' : s <= 2 ? 'low' : 'available';
+    const label = s === 0 ? 'Out of Stock' : `${s} available`;
+    return `
+      <div class="equip-card">
+        <div class="equip-img">${getIcon(e.name)}</div>
+        <div class="equip-body">
+          <div class="equip-name">${e.name}</div>
+          <div class="equip-desc">${e.description || ''}</div>
+          <div class="equip-footer">
+            <span class="stock-badge ${cls}">
+              <span class="dot ${cls}"></span>${label}
+            </span>
+            <button class="btn-borrow" ${s === 0 ? 'disabled' : ''} onclick="openModal(${e.id})">
+              ${s === 0 ? 'Unavailable' : 'Borrow'}
+            </button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ===== MODAL =====
+function openModal(id) {
+  selectedEquip = equipmentData.find(e => e.id === id);
+  document.getElementById('modal-icon').textContent  = getIcon(selectedEquip.name);
+  document.getElementById('modal-name').textContent  = selectedEquip.name;
+  document.getElementById('modal-stock').textContent = `${selectedEquip.available_qty} unit(s) available`;
+  document.getElementById('borrow-modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('borrow-modal').classList.remove('open');
+}
+function goToRequest() {
+  closeModal();
+  showPage('request');
+  setTimeout(() => {
+    const sel = document.getElementById('req-equipment');
+    for (let i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value == selectedEquip.id) {
+        sel.selectedIndex = i; break;
+      }
+    }
+  }, 200);
+}
+
+// ===== REQUEST FORM: Load equipment dropdown from API =====
+async function loadEquipSelect() {
+  const sel = document.getElementById('req-equipment');
+  sel.innerHTML = '<option value="">-- Loading... --</option>';
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('req-date').value = today;
+
+  try {
+    const res  = await fetch(`${API}/equipment`, {
+      headers: { 'Authorization': 'Bearer ' + getToken() }
+    });
+    const data = await res.json();
+    equipmentData = data;
+
+    sel.innerHTML = '<option value="">-- Select Equipment --</option>';
+    data.filter(e => e.available_qty > 0).forEach(e => {
+      sel.innerHTML += `<option value="${e.id}">${e.name} (${e.available_qty} available)</option>`;
+    });
+  } catch {
+    sel.innerHTML = '<option value="">-- Failed to load --</option>';
+  }
+}
+
+// ===== SUBMIT REQUEST TO API =====
+async function submitRequest() {
+  const equipment_id = document.getElementById('req-equipment').value;
+  const ward         = document.getElementById('req-ward').value.trim();
+  const return_date  = document.getElementById('req-return').value;
+  const borrow_date  = document.getElementById('req-date').value;
+  const qty          = parseInt(document.getElementById('req-qty').value);
+  const note         = document.getElementById('req-note').value.trim();
+
+  if (!equipment_id || !ward || !return_date) {
+    alert('Please fill in all required fields.');
+    return;
+  }
+
+  const btn = document.querySelector('.btn-submit');
+  btn.textContent = 'Submitting...';
+  btn.disabled = true;
+
+  try {
+    const res  = await fetch(`${API}/requests`, {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': 'Bearer ' + getToken()
+      },
+      body: JSON.stringify({ equipment_id: parseInt(equipment_id), qty, ward, borrow_date, return_date, note })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      // Show success toast
+      const toast = document.getElementById('req-success');
+      toast.textContent = `✅ Request ${data.request_no} submitted! Waiting for approval.`;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 5000);
+
+      // Reset form
+      document.getElementById('req-equipment').value = '';
+      document.getElementById('req-ward').value      = '';
+      document.getElementById('req-return').value    = '';
+      document.getElementById('req-note').value      = '';
+      document.getElementById('req-qty').value       = '1';
+
+      // Reload equipment dropdown to update stock
+      loadEquipSelect();
+    } else {
+      alert(data.message || 'Failed to submit request.');
+    }
+  } catch {
+    alert('Cannot connect to server.');
+  } finally {
+    btn.textContent = '📤 Submit Request';
+    btn.disabled = false;
+  }
+}
+
+// ===== LOAD REQUEST STATUS FROM API =====
+async function loadStatus() {
+  const tbody = document.getElementById('status-tbody');
+  const empty = document.getElementById('status-empty');
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">⏳ Loading...</td></tr>';
+  empty.style.display = 'none';
+
+  try {
+    const res  = await fetch(`${API}/requests`, {
+      headers: { 'Authorization': 'Bearer ' + getToken() }
+    });
+
+    if (res.status === 401 || res.status === 403) { doLogout(); return; }
+
+    const data = await res.json();
+
+    if (!data.length) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+
+    const statusLabel = {
+      pending:  '<span class="status-pill pending">⏳ Pending</span>',
+      approved: '<span class="status-pill approved">✅ Approved</span>',
+      returned: '<span class="status-pill returned">📦 Returned</span>',
+      rejected: '<span class="status-pill overdue">❌ Rejected</span>',
+      overdue:  '<span class="status-pill overdue">⚠️ Overdue</span>',
+    };
+
+    tbody.innerHTML = data.map(r => `
+      <tr>
+        <td><code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted)">${r.request_no}</code></td>
+        <td><b>${r.equipment_name}</b></td>
+        <td>${r.qty}</td>
+        <td>${r.ward}</td>
+        <td>${r.borrow_date?.split('T')[0] || r.borrow_date}</td>
+        <td>${r.return_date?.split('T')[0]  || r.return_date}</td>
+        <td>${statusLabel[r.status] || r.status}</td>
+      </tr>`).join('');
+
+  } catch {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--danger)">❌ Failed to load. Is the server running?</td></tr>';
+  }
+}
+
+// ===== ENTER KEY on login =====
+document.getElementById('login-pass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+// ===== AUTO LOGIN if token exists =====
+window.addEventListener('load', () => {
+  const t = getToken();
+  if (t) {
+    // Try to restore session
+    try {
+      const payload = JSON.parse(atob(t.split('.')[1]));
+      if (payload.exp * 1000 > Date.now()) {
+        currentUser = payload;
+        document.getElementById('username-display').textContent = payload.username;
+        document.getElementById('greet-name').textContent       = payload.username;
+        showPage('main');
+        return;
+      }
+    } catch {}
+    clearToken();
+  }
+});
+</script>
+</body>
+</html>
