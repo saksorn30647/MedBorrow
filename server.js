@@ -2,17 +2,13 @@ const express = require('express');
 const cors = require('cors');
 const path = require("path");
 require('dotenv').config();
-app.use(express.static("public"));
 
-const app = express();
+const app = express();  // create app first
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static("public")); // now it's safe to use app
 
-// Homepage
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "medical-equipment.html"));
-});
 
 // API routes
 app.use('/api/auth',      require('./routes/auth'));
