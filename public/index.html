@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+let currentUser = null;
+let isAdmin = false;
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -23,7 +25,7 @@
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
+  
   body {
     font-family: 'IBM Plex Sans', sans-serif;
     background: var(--bg);
@@ -591,7 +593,7 @@
 
 // ===== CONFIG =====
 const API = '/api';
-const isAdmin = currentUser.role === 'admin';
+
 
 // icon map สำหรับแต่ละเครื่องมือ
 const iconMap = {
@@ -661,6 +663,7 @@ async function doLogin() {
       currentUser = data.user;
       document.getElementById('username-display').textContent = currentUser.full_name || currentUser.username;
       document.getElementById('greet-name').textContent       = currentUser.full_name || currentUser.username;
+      isAdmin = currentUser && currentUser.role === 'admin';
       showPage('main');
     } else {
       alert(data.message || 'Login failed.');
@@ -887,7 +890,7 @@ async function loadStatus() {
       rejected: '<span class="status-pill overdue">❌ Rejected</span>',
       overdue:  '<span class="status-pill overdue">⚠️ Overdue</span>',
     };
-    const isAdmin = currentUser.role === 'admin';
+     const isAdmin = currentUser && currentUser.role === 'admin';
      const today = new Date().toISOString().split('T')[0];
 
   data.forEach(r => {
