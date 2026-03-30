@@ -591,6 +591,7 @@
 
 // ===== CONFIG =====
 const API = '/api';
+const isAdmin = currentUser.role === 'admin';
 
 // icon map สำหรับแต่ละเครื่องมือ
 const iconMap = {
@@ -665,7 +666,7 @@ async function doLogin() {
       alert(data.message || 'Login failed.');
     }
   } catch (err) {
-    alert('Cannot connect to server. Make sure backend is running at localhost:3000');
+    alert('Cannot connect to server. Please try again.');
   } finally {
     btn.textContent = 'Sign In';
     btn.disabled = false;
@@ -829,7 +830,34 @@ async function submitRequest() {
     btn.disabled = false;
   }
 }
+async function updateStatus(id, status) {
+  try {
+    const res = await fetch(`${API}/requests/${id}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + getToken()
+      },
+      body: JSON.stringify({ status })
+    });
 
+    const data = await res.json();
+
+    if (res.ok) {
+      // 🎉 Feedback
+      alert(`✅ Updated to ${status}`);
+
+      // 🔄 Refresh table
+      await loadStatus();
+
+    } else {
+      alert(data.message || 'Failed to update');
+    }
+
+  } catch (err) {
+    alert('Server error');
+  }
+}
 // ===== LOAD REQUEST STATUS FROM API =====
 async function loadStatus() {
   const tbody = document.getElementById('status-tbody');
@@ -859,17 +887,46 @@ async function loadStatus() {
       rejected: '<span class="status-pill overdue">❌ Rejected</span>',
       overdue:  '<span class="status-pill overdue">⚠️ Overdue</span>',
     };
+    const isAdmin = currentUser.role === 'admin';
+     const today = new Date().toISOString().split('T')[0];
 
-    tbody.innerHTML = data.map(r => `
-      <tr>
-        <td><code style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted)">${r.request_no}</code></td>
-        <td><b>${r.equipment_name}</b></td>
-        <td>${r.qty}</td>
-        <td>${r.ward}</td>
-        <td>${r.borrow_date?.split('T')[0] || r.borrow_date}</td>
-        <td>${r.return_date?.split('T')[0]  || r.return_date}</td>
-        <td>${statusLabel[r.status] || r.status}</td>
-      </tr>`).join('');
+  data.forEach(r => {
+  const returnDate = r.return_date?.split('T')[0];
+
+  if (
+    returnDate &&
+    returnDate < today &&
+    (r.status === 'pending' || r.status === 'approved')
+  ) {
+    r.status = 'overdue'; // visual override
+   }
+  });
+
+  tbody.innerHTML = data.map(r => `
+    <tr>
+      <td>${r.request_no}</td>
+      <td>${r.equipment_name}</td>
+      <td>${r.qty}</td>
+      <td>${r.ward}</td>
+      <td>${r.borrow_date?.split('T')[0]}</td>
+      <td>${r.return_date?.split('T')[0]}</td>
+      <td>${statusLabel[r.status]}</td>
+
+      ${isAdmin ? `
+        <td>
+          ${r.status === 'pending' ? `
+            <button onclick="updateStatus(${r.id}, 'approved')">✅</button>
+            <button onclick="updateStatus(${r.id}, 'rejected')">❌</button>
+          ` : ''}
+
+          ${(r.status === 'approved' || r.status === 'overdue') ? `
+          <button onclick="updateStatus(${r.id}, 'returned')">📦 Return</button>
+        ` : ''}
+      </td>
+    ` : ''}
+  </tr>
+`).join('');  
+    
 
   } catch {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--danger)">❌ Failed to load. Is the server running?</td></tr>';
