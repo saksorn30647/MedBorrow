@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-let currentUser = null;
-let isAdmin = false;
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -550,6 +549,7 @@ let isAdmin = false;
             <th>Borrow Date</th>
             <th>Return Date</th>
             <th>Status</th>
+            <th>Return</th>
           </tr>
         </thead>
         <tbody id="status-tbody">
@@ -595,6 +595,7 @@ let isAdmin = false;
 const API = '/api';
 
 
+
 // icon map สำหรับแต่ละเครื่องมือ
 const iconMap = {
   'Blood Pressure Monitor': '🩺',
@@ -615,7 +616,7 @@ let currentUser  = null;
 let token        = null;
 let equipmentData = [];
 let selectedEquip = null;
-
+let isAdmin = false;
 // ===== HELPERS =====
 function getToken() { return localStorage.getItem('mb_token'); }
 function saveToken(t) { localStorage.setItem('mb_token', t); }
