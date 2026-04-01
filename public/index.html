@@ -731,6 +731,7 @@ async function loadEquipment() {
 }
 
 function renderEquipment(data) {
+  console.log("Rendering equipment", equipmentData);
   const grid = document.getElementById('equipment-grid');
   if (!data.length) {
     grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">No equipment found.</div>';
@@ -749,7 +750,7 @@ function renderEquipment(data) {
           <div class="equip-footer">
             <span class="stock-badge ${stockClass}">
               <span class="dot ${stockClass}"></span>
-              ${item.available_qty}/${item.total_qty}
+              $${item?.available_qty ?? 0}/${item.total_qty}
             </span>
 
             ${isAdmin ? `
