@@ -5,4 +5,5 @@ const { getAllEquipment, getEquipmentById, createEquipment } = require('../contr
 router.get('/',    auth, getAllEquipment);
 router.get('/:id', auth, getEquipmentById);
 router.post('/',   auth, createEquipment);
+router.patch('/:id/quantity', auth, updateQuantity);
 module.exports = router;

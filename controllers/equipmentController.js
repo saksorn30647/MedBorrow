@@ -36,4 +36,40 @@ async function createEquipment(req, res) {
   }
 }
 
+async function updateQuantity(req, res) {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Admin only.' });
+  }
+
+  const { id } = req.params;
+  const { change } = req.body;
+
+  try {
+    const [rows] = await db.query(
+      'SELECT total_qty, available_qty FROM equipment WHERE id = ?',
+      [id]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ message: 'Not found' });
+    }
+
+    let total = rows[0].total_qty + change;
+    let available = rows[0].available_qty + change;
+
+    if (total < 0 || available < 0) {
+      return res.status(400).json({ message: 'Invalid quantity' });
+    }
+
+    await db.query(
+      'UPDATE equipment SET total_qty = ?, available_qty = ? WHERE id = ?',
+      [total, available, id]
+    );
+
+    res.json({ message: 'Updated' });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+}
 module.exports = { getAllEquipment, getEquipmentById, createEquipment };
