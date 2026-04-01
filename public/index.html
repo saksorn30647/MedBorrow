@@ -731,48 +731,52 @@ async function loadEquipment() {
 }
 
 function renderEquipment(data) {
-  console.log("Rendering equipment", equipmentData);
+  console.log("Rendering equipment", data);
+
   const grid = document.getElementById('equipment-grid');
+
   if (!data.length) {
     grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">No equipment found.</div>';
     return;
   }
+
   grid.innerHTML = data.map(e => {
-    const s   = e.available_qty;
+    const s = e.available_qty;
     const cls = s === 0 ? 'empty' : s <= 2 ? 'low' : 'available';
     const label = s === 0 ? 'Out of Stock' : `${s} available`;
+
     return `
       <div class="equip-card">
         <div class="equip-img">${getIcon(e.name)}</div>
+
         <div class="equip-body">
           <div class="equip-name">${e.name}</div>
           <div class="equip-desc">${e.description || ''}</div>
+
           <div class="equip-footer">
-            <span class="stock-badge ${stockClass}">
-              <span class="dot ${stockClass}"></span>
-              $${item?.available_qty ?? 0}/${item.total_qty}
+            <span class="stock-badge ${cls}">
+              <span class="dot ${cls}"></span>
+              ${e.available_qty}/${e.total_qty}
             </span>
 
-            ${isAdmin ? `
-              <div class="admin-controls">
-                <button onclick="updateQty(${item.id}, 1)">➕</button>
-                <button onclick="updateQty(${item.id}, -1)">➖</button>
-          </div>
-  ` : `
-    <button class="btn-borrow" ${item.available_qty === 0 ? 'disabled' : ''}>
-      Borrow
-    </button>
-  `}
-</div>
-            <span class="stock-badge ${cls}">
-              <span class="dot ${cls}"></span>${label}
-            </span>
-            <button class="btn-borrow" ${s === 0 ? 'disabled' : ''} onclick="openModal(${e.id})">
-              ${s === 0 ? 'Unavailable' : 'Borrow'}
-            </button>
+            ${
+              currentUser && currentUser.role === 'admin'
+                ? `
+                  <div class="admin-controls">
+                    <button onclick="updateQty(${e.id}, 1)">➕</button>
+                    <button onclick="updateQty(${e.id}, -1)">➖</button>
+                  </div>
+                `
+                : `
+                  <button class="btn-borrow" ${s === 0 ? 'disabled' : ''} onclick="openModal(${e.id})">
+                    ${s === 0 ? 'Unavailable' : 'Borrow'}
+                  </button>
+                `
+            }
           </div>
         </div>
-      </div>`;
+      </div>
+    `;
   }).join('');
 }
 
@@ -801,25 +805,33 @@ function goToRequest() {
 }
 
 // ===== REQUEST FORM: Load equipment dropdown from API =====
-async function loadEquipSelect() {
-  const sel = document.getElementById('req-equipment');
-  sel.innerHTML = '<option value="">-- Loading... --</option>';
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('req-date').value = today;
-
+async function loadEquipment() {
+  showLoading('equipment-grid');
   try {
-    const res  = await fetch(`${API}/equipment`, {
-      headers: { 'Authorization': 'Bearer ' + getToken() }
+    const res = await fetch(`${API}/equipment`, {
+      headers: {
+        'Authorization': 'Bearer ' + getToken()
+      },
+      cache: "no-store"
     });
+
+    if (res.status === 304) {
+      console.warn("Using cached data");
+      return; // or reuse previous data
+    }
+
+    if (!res.ok) {
+      throw new Error("HTTP error " + res.status);
+    }
+
     const data = await res.json();
     equipmentData = data;
 
-    sel.innerHTML = '<option value="">-- Select Equipment --</option>';
-    data.filter(e => e.available_qty > 0).forEach(e => {
-      sel.innerHTML += `<option value="${e.id}">${e.name} (${e.available_qty} available)</option>`;
-    });
-  } catch {
-    sel.innerHTML = '<option value="">-- Failed to load --</option>';
+    renderEquipment(equipmentData);
+
+  } catch (err) {
+    console.error(err);
+    showError('equipment-grid', 'Failed to load equipment.');
   }
 }
 
