@@ -5,6 +5,7 @@ async function getAllEquipment(req, res) {
     const [rows] = await db.query(
       'SELECT id, name, description, image_url, total_qty, available_qty, category FROM equipment WHERE is_active = TRUE ORDER BY name'
     );
+    res.set('Cache-Control', 'no-store');
     res.json(rows);
     console.log("GET /equipment called");
   } catch (err) {

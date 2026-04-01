@@ -707,9 +707,12 @@ function doLogout() {
 async function loadEquipment() {
   showLoading('equipment-grid');
   try {
-    const res  = await fetch(`${API}/equipment`, {
-      headers: { 'Authorization': 'Bearer ' + getToken() }
-    });
+    const res = await fetch(`${API}/equipment`, {
+  headers: {
+    'Authorization': 'Bearer ' + getToken()
+  },
+  cache: "no-store"   // ✅ ADD THIS
+});
 
     if (res.status === 401 || res.status === 403) { doLogout(); return; }
 
