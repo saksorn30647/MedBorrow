@@ -45,7 +45,7 @@ async function createRequest(req, res) {
       'INSERT INTO borrow_requests (request_no, user_id, equipment_id, qty, ward, borrow_date, return_date, note) VALUES (?,?,?,?,?,?,?,?)',
       [requestNo, req.user.id, equipment_id, qty, ward, borrow_date, return_date, note || null]
     );
-    await conn.query('UPDATE equipment SET available_qty = available_qty - ? WHERE id = ?', [qty, equipment_id]);
+
     await conn.commit();
     res.status(201).json({ message: 'Request submitted.', request_no: requestNo, id: result.insertId });
   } catch (err) {
