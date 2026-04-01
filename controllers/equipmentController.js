@@ -72,4 +72,4 @@ async function updateQuantity(req, res) {
     res.status(500).json({ message: 'Server error' });
   }
 }
-module.exports = { getAllEquipment, getEquipmentById, createEquipment };
+module.exports = { getAllEquipment, getEquipmentById, createEquipment, updateQuantity };
