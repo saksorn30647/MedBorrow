@@ -708,19 +708,25 @@ async function loadEquipment() {
   showLoading('equipment-grid');
   try {
     const res = await fetch(`${API}/equipment`, {
-  headers: {
-    'Authorization': 'Bearer ' + getToken()
-  },
-  cache: "no-store"   // ✅ ADD THIS
-});
+      headers: {
+        'Authorization': 'Bearer ' + getToken()
+      },
+      cache: "no-store"
+    });
 
-    if (res.status === 401 || res.status === 403) { doLogout(); return; }
+    console.log("STATUS:", res.status);
 
-    equipmentData = await res.json();
+    const text = await res.text();   // 👈 IMPORTANT
+    console.log("RAW RESPONSE:", text);
+
+    const data = JSON.parse(text);   // manually parse
+    equipmentData = data;
+
     renderEquipment(equipmentData);
 
   } catch (err) {
-    showError('equipment-grid', 'Failed to load equipment. Is the server running?');
+    console.error("ERROR:", err);   // 👈 SHOW REAL ERROR
+    showError('equipment-grid', 'Failed to load equipment.');
   }
 }
 
