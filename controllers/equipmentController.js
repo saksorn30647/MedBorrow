@@ -6,6 +6,7 @@ async function getAllEquipment(req, res) {
       'SELECT id, name, description, image_url, total_qty, available_qty, category FROM equipment WHERE is_active = TRUE ORDER BY name'
     );
     res.json(rows);
+    console.log("GET /equipment called");
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
   }

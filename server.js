@@ -5,7 +5,12 @@ require('dotenv').config();
 
 const app = express();  // create app first
 
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+app.options('*', cors());
 app.use(express.json());
 app.use(express.static("public")); // now it's safe to use app
 
