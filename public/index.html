@@ -890,6 +890,41 @@ async function submitRequest() {
     btn.disabled = false;
   }
 }
+
+async function loadEquipSelect() {
+  const select = document.getElementById('req-equipment');
+
+  try {
+    const res = await fetch(`${API}/equipment`, {
+      headers: {
+        'Authorization': 'Bearer ' + getToken()
+      },
+      cache: "no-store"
+    });
+
+    const data = await res.json();
+
+    // reset dropdown
+    select.innerHTML = '<option value="">--- Select Equipment ---</option>';
+
+    data.forEach(e => {
+      const option = document.createElement('option');
+      option.value = e.id;
+      option.textContent = `${e.name} (${e.available_qty} available)`;
+
+      // optional: disable if no stock
+      if (e.available_qty === 0) {
+        option.disabled = true;
+      }
+
+      select.appendChild(option);
+    });
+
+  } catch (err) {
+    console.error("Dropdown load error:", err);
+  }
+}
+
 async function updateStatus(id, status) {
   try {
     const res = await fetch(`${API}/requests/${id}/status`, {
