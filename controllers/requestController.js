@@ -57,28 +57,74 @@ async function createRequest(req, res) {
 }
 
 async function updateRequestStatus(req, res) {
-  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin only.' });
+  if (req.user.role !== 'admin')
+    return res.status(403).json({ message: 'Admin only.' });
+
   const { id } = req.params;
   const { status } = req.body;
   const valid = ['approved', 'rejected', 'returned', 'overdue'];
-  if (!valid.includes(status)) return res.status(400).json({ message: `Status must be: ${valid.join(', ')}` });
+
+  if (!valid.includes(status))
+    return res.status(400).json({ message: `Status must be: ${valid.join(', ')}` });
 
   const conn = await db.getConnection();
+
   try {
-    await conn.beginTransaction();
-    const [rows] = await conn.query('SELECT * FROM borrow_requests WHERE id = ?', [id]);
-    if (rows.length === 0) { await conn.rollback(); return res.status(404).json({ message: 'Request not found.' }); }
-    const request = rows[0];
-    if ((status === 'returned' || status === 'rejected') && request.status === 'pending') {
-      await conn.query('UPDATE equipment SET available_qty = available_qty + ? WHERE id = ?', [request.qty, request.equipment_id]);
+    await conn.beginTransaction(); // ✅ IMPORTANT
+
+    // 🔍 STEP 1: get current request
+    const [rows] = await conn.query(
+      'SELECT * FROM borrow_requests WHERE id = ?',
+      [id]
+    );
+
+    if (rows.length === 0) {
+      await conn.rollback();
+      return res.status(404).json({ message: 'Request not found.' });
     }
+
+    const request = rows[0];
+
+    // 🧠 STEP 2: stock logic
+
+    // RETURN → always add back
+    if (status === 'returned' && request.status !== 'returned') {
+      await conn.query(
+        'UPDATE equipment SET available_qty = available_qty + ? WHERE id = ?',
+        [request.qty, request.equipment_id]
+      );
+    }
+
+    // REJECT → restore ONLY if it was pending
+    if (status === 'rejected' && request.status === 'pending') {
+      await conn.query(
+        'UPDATE equipment SET available_qty = available_qty + ? WHERE id = ?',
+        [request.qty, request.equipment_id]
+      );
+    }
+
+    // APPROVE → reduce stock
+    if (status === 'approved' && request.status === 'pending') {
+      await conn.query(
+        'UPDATE equipment SET available_qty = available_qty - ? WHERE id = ?',
+        [request.qty, request.equipment_id]
+      );
+    }
+
+    // 📝 STEP 3: update request status
     await conn.query(
-      'UPDATE borrow_requests SET status=?, approved_by=?, approved_at=NOW(), actual_return=? WHERE id=?',
+      `UPDATE borrow_requests 
+       SET status=?, approved_by=?, approved_at=NOW(), actual_return=? 
+       WHERE id=?`,
       [status, req.user.id, status === 'returned' ? new Date() : null, id]
     );
+
     await conn.commit();
+
     res.json({ message: `Request marked as ${status}.` });
+
   } catch (err) {
+    console.error(err);
     await conn.rollback();
     res.status(500).json({ message: 'Server error.' });
   } finally {
